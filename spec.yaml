@@ -18,22 +18,22 @@ services:
     envs:
       - key: APP_DATABASE__USERNAME
         scope: RUN_TIME
-        value: ${db-one.USERNAME}
+        value: ${blank.USERNAME}
       - key: APP_DATABASE__PASSWORD
         scope: RUN_TIME
-        value: ${db-one.PASSWORD}
+        value: ${blank.PASSWORD}
       - key: APP_DATABASE__HOST
         scope: RUN_TIME
-        value: ${db-one.HOSTNAME}
+        value: ${blank.HOSTNAME}
       - key: APP_DATABASE__PORT
         scope: RUN_TIME
-        value: ${db-one.PORT}
+        value: ${blank.PORT}
       - key: APP_DATABASE__DATABASE_NAME
         scope: RUN_TIME
-        value: ${db-one.DATABASE}
+        value: ${blank.DATABASE}
 databases:
   - engine: PG
-    name: db-one
+    name: blank
     num_nodes: 1
     size: db-s-dev-database
     version: "12"

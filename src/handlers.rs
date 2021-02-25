@@ -1,7 +1,7 @@
 use sqlx::postgres::PgPool;
 use warp::{http::StatusCode, reject, Rejection, Reply};
 
-pub async fn health_check(db_pool: PgPool) -> Result<impl Reply, Rejection> {
+pub async fn health_check_handler(db_pool: PgPool) -> Result<impl Reply, Rejection> {
     let result = sqlx::query!("SELECT * FROM blank")
         .fetch_one(&db_pool)
         .await

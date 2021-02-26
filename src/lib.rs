@@ -1,4 +1,4 @@
 pub mod configuration;
-pub mod handlers;
+pub mod domain;
 pub mod routes;
 pub mod telemetry;

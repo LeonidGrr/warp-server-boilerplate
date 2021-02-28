@@ -1,14 +1,16 @@
 use validator::validate_email;
+use warp::{reject, Rejection};
 
 #[derive(Debug)]
 pub struct UserEmail(String);
 
 impl UserEmail {
-    pub fn parse(s: String) -> Result<UserEmail, String> {
+    pub fn parse(s: String) -> Result<UserEmail, Rejection> {
         if validate_email(&s) {
             Ok(Self(s))
-        } else {
-            Err(format!("{} is not a valid user email.", s))
+        } else {            
+            tracing::error!("{} is not a valid user email.", s);
+            return Err(reject::custom(Errors::EmailNotValid));
         }
     }
 }

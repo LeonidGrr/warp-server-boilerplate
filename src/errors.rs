@@ -13,6 +13,7 @@ pub enum Errors {
     UserNameNotValid,
     PasswordEncodeFailed,
     WrongCredentials,
+    EmailNotValid,
 }
 
 impl reject::Reject for Errors {}
@@ -50,6 +51,10 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
             UserNameNotValid=> {
                 code = StatusCode::BAD_REQUEST;
                 message = "Username not valid.";
+            },
+            EmailNotValid=> {
+                code = StatusCode::BAD_REQUEST;
+                message = "Email not valid.";
             },
             _ => {
                 code = StatusCode::INTERNAL_SERVER_ERROR;

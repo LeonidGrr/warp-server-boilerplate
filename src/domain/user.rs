@@ -1,4 +1,4 @@
-use warp::hyper::StatusCode;
+use warp::{Rejection, hyper::StatusCode};
 use chrono::prelude::*;
 use crate::domain::{user_email::UserEmail, user_name::UserName, user_password::UserPassword};
 
@@ -10,7 +10,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(name: String, email: String, password: String) -> Result<Self, StatusCode> {
+    pub fn new(name: String, email: String, password: String) -> Result<Self, Rejection> {
         let created_at = Utc::now();
         let email = UserEmail::parse(email)?;
         let name = UserName::parse(name)?;

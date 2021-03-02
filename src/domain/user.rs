@@ -1,7 +1,8 @@
-use warp::{Rejection, hyper::StatusCode};
-use chrono::prelude::*;
 use crate::domain::{user_email::UserEmail, user_name::UserName, user_password::UserPassword};
+use chrono::prelude::*;
+use warp::Rejection;
 
+#[derive(Debug)]
 pub struct User {
     pub email: UserEmail,
     pub name: UserName,
@@ -10,7 +11,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(name: String, email: String, password: String) -> Result<Self, Rejection> {
+    pub fn new(name: &String, email: &String, password: &String) -> Result<Self, Rejection> {
         let created_at = Utc::now();
         let email = UserEmail::parse(email)?;
         let name = UserName::parse(name)?;

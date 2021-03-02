@@ -1,3 +1,4 @@
+use crate::errors::Errors;
 use validator::validate_email;
 use warp::{reject, Rejection};
 
@@ -5,10 +6,10 @@ use warp::{reject, Rejection};
 pub struct UserEmail(String);
 
 impl UserEmail {
-    pub fn parse(s: String) -> Result<UserEmail, Rejection> {
-        if validate_email(&s) {
-            Ok(Self(s))
-        } else {            
+    pub fn parse(s: &String) -> Result<UserEmail, Rejection> {
+        if validate_email(s) {
+            Ok(Self(s.to_string()))
+        } else {
             tracing::error!("{} is not a valid user email.", s);
             return Err(reject::custom(Errors::EmailNotValid));
         }
@@ -25,8 +26,8 @@ impl AsRef<str> for UserEmail {
 mod tests {
     use super::UserEmail;
     use claim::assert_err;
-    use fake::faker::internet::en::SafeEmail;
-    use fake::Fake;
+    // use fake::faker::internet::en::SafeEmail;
+    // use fake::Fake;
 
     #[derive(Debug, Clone)]
     struct ValidEmailFixture(pub String);
@@ -46,18 +47,18 @@ mod tests {
     #[test]
     fn empty_string_is_rejected() {
         let email = "".to_string();
-        assert_err!(UserEmail::parse(email));
+        assert_err!(UserEmail::parse(&email));
     }
 
     #[test]
     fn email_missing_at_symbol_is_rejected() {
         let email = "ursuladomain.com".to_string();
-        assert_err!(UserEmail::parse(email));
+        assert_err!(UserEmail::parse(&email));
     }
 
     #[test]
     fn email_missing_subject_is_rejected() {
         let email = "@domain.com".to_string();
-        assert_err!(UserEmail::parse(email));
+        assert_err!(UserEmail::parse(&email));
     }
 }

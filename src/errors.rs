@@ -1,11 +1,7 @@
-
+use serde::Serialize;
 use std::convert::Infallible;
-use std::error::Error;
-use std::num::NonZeroU16;
-
-use serde::{Deserialize, Serialize};
 use warp::http::StatusCode;
-use warp::{reject, Filter, Rejection, Reply};
+use warp::{reject, Rejection, Reply};
 
 #[derive(Debug)]
 pub enum Errors {
@@ -14,6 +10,8 @@ pub enum Errors {
     PasswordEncodeFailed,
     WrongCredentials,
     EmailNotValid,
+    MissingBodyFields,
+    DBQueryError,
 }
 
 impl reject::Reject for Errors {}
@@ -24,6 +22,7 @@ struct ErrorMessage {
     message: String,
 }
 
+#[allow(dead_code)]
 async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let code;
     let message;
@@ -36,26 +35,34 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
         message = "Invalid Body";
     } else if let Some(e) = err.find::<Errors>() {
         match e {
-            PasswordNotValid => {
+            Errors::PasswordNotValid => {
                 code = StatusCode::BAD_REQUEST;
                 message = "Password not valid.";
-            },
-            PasswordEncodeFailed => {
+            }
+            Errors::PasswordEncodeFailed => {
                 code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Failed to encode password.";
-            },
-            WrongCredentials => {
+            }
+            Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;
                 message = "Wrong username or password.";
-            },
-            UserNameNotValid=> {
+            }
+            Errors::UserNameNotValid => {
                 code = StatusCode::BAD_REQUEST;
                 message = "Username not valid.";
-            },
-            EmailNotValid=> {
+            }
+            Errors::EmailNotValid => {
                 code = StatusCode::BAD_REQUEST;
                 message = "Email not valid.";
-            },
+            }
+            Errors::MissingBodyFields => {
+                code = StatusCode::BAD_REQUEST;
+                message = "Invalid Body";
+            }
+            Errors::DBQueryError => {
+                code = StatusCode::BAD_REQUEST;
+                message = "Internal Server Error";
+            }
             _ => {
                 code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "UNHANDLED_REJECTION";

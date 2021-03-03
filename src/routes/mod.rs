@@ -1,10 +1,10 @@
 mod health_check;
-mod register;
 mod login;
+mod register;
 
 use health_check::*;
-use register::*;
 use login::*;
+use register::*;
 use sqlx::PgPool;
 use std::convert::Infallible;
 use warp::{Filter, Rejection, Reply};

@@ -10,7 +10,7 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Debug)]
-pub struct UserPassword(String);
+pub struct UserPassword(pub String);
 
 impl UserPassword {
     pub fn parse(password: &String) -> Result<UserPassword, Rejection> {
@@ -46,7 +46,7 @@ impl UserPassword {
         argon2::verify_encoded_ext(hash, password.as_bytes(), SECRET_KEY.as_bytes(), &[]).map_err(
             |e| {
                 tracing::error!("Failed to verify password: {:?}", e);
-                return reject::custom(Errors::WrongCredentials);
+                return reject::custom(Errors::PasswordEncodeFailed);
             },
         )
     }

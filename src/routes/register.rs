@@ -47,7 +47,7 @@ pub async fn register_handler(
         })?;
         return Ok(StatusCode::OK);
     } else {
-        tracing::error!("Some fields are missing in body: {:?}", body);
+        tracing::error!("Some fields are missing in request body: {:?}", body);
         return Err(reject::custom(Errors::MissingBodyFields));
     }
     // let result = sqlx::query!("SELECT * FROM blank")

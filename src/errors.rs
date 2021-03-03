@@ -41,7 +41,7 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
             }
             Errors::PasswordEncodeFailed => {
                 code = StatusCode::INTERNAL_SERVER_ERROR;
-                message = "Failed to encode password.";
+                message = "Failed to encode/decode password.";
             }
             Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;

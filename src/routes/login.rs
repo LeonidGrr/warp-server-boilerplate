@@ -1,9 +1,9 @@
-use crate::domain::UserPassword;
+use crate::domain::{Session, UserPassword};
 use crate::errors::Errors;
 use crate::routes::with_db;
 use sqlx::PgPool;
 use std::collections::HashMap;
-use warp::{http::StatusCode, reject, Filter, Rejection, Reply};
+use warp::{http::header, http::Response, http::StatusCode, reject, Filter, Rejection, Reply};
 
 pub fn login(db_pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("login")
@@ -19,7 +19,7 @@ pub async fn login_handler(
     body: HashMap<String, String>,
     db_pool: PgPool,
 ) -> Result<impl Reply, Rejection> {
-    tracing::info!("Verify user credentials from data {:?}", body);
+    tracing::info!("Verifying user credentials: {:?}", body);
     let name = body.get(&("name".to_string()));
     let password = body.get(&("password".to_string()));
 
@@ -28,17 +28,22 @@ pub async fn login_handler(
             .map(|row| UserPassword(row.hash))
             .fetch_one(&db_pool)
             .await
-            .map_err(|e| {
-                tracing::error!("Failed to execute query: {:?}", e);
-                return reject::custom(Errors::DBQueryError);
-            })?;
+            .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
 
         if !UserPassword::verify(&password_hash.0, password)? {
             return Err(reject::custom(Errors::WrongCredentials));
         }
-        Ok(StatusCode::OK)
+
+        let session = Session::new(name);
+        let cookie_header = session.get_cookie_header();
+        tracing::info!("Registering new session.: {:?}", session);
+
+        Ok(Response::builder()
+            .status(StatusCode::OK)
+            .header(header::LOCATION, "/")
+            .header(header::SET_COOKIE, cookie_header)
+            .body("Success!"))
     } else {
-        tracing::error!("Some fields are missing in request body: {:?}", body);
-        return Err(reject::custom(Errors::MissingBodyFields));
+        return Err(reject::custom(Errors::MissingBodyFields(body)));
     }
 }

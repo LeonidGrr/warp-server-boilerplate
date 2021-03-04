@@ -18,10 +18,8 @@ impl UserPassword {
         let is_too_short = password.graphemes(true).count() < 8;
         let is_too_long = password.graphemes(true).count() > 256;
         if is_empty_or_whitespace || is_too_short || is_too_long {
-            tracing::error!("Password not meets security requirements.");
             return Err(reject::custom(Errors::PasswordNotValid));
         }
-
         let hash = Self::hash_password(password)?;
 
         Ok(Self(hash))
@@ -34,21 +32,15 @@ impl UserPassword {
             ..Default::default()
         };
 
-        let hash = argon2::hash_encoded(password.as_bytes(), &salt, &config).map_err(|e| {
-            tracing::error!("Failed to encode password: {:?}", e);
-            return reject::custom(Errors::PasswordEncodeFailed);
-        });
+        let hash = argon2::hash_encoded(password.as_bytes(), &salt, &config)
+            .map_err(|e| reject::custom(Errors::PasswordEncodeFailed(e)));
 
         hash
     }
 
     pub fn verify(hash: &str, password: &str) -> Result<bool, Rejection> {
-        argon2::verify_encoded_ext(hash, password.as_bytes(), SECRET_KEY.as_bytes(), &[]).map_err(
-            |e| {
-                tracing::error!("Failed to verify password: {:?}", e);
-                return reject::custom(Errors::PasswordEncodeFailed);
-            },
-        )
+        argon2::verify_encoded_ext(hash, password.as_bytes(), SECRET_KEY.as_bytes(), &[])
+            .map_err(|e| reject::custom(Errors::PasswordEncodeFailed(e)))
     }
 }
 

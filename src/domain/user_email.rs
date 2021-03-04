@@ -10,8 +10,7 @@ impl UserEmail {
         if validate_email(s) {
             Ok(Self(s.to_string()))
         } else {
-            tracing::error!("{} is not a valid user email.", s);
-            return Err(reject::custom(Errors::EmailNotValid));
+            return Err(reject::custom(Errors::EmailNotValid(s.to_string())));
         }
     }
 }

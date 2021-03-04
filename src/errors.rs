@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::HashMap;
 use std::convert::Infallible;
 use warp::http::StatusCode;
 use warp::{reject, Rejection, Reply};
@@ -6,12 +7,12 @@ use warp::{reject, Rejection, Reply};
 #[derive(Debug)]
 pub enum Errors {
     PasswordNotValid,
-    UserNameNotValid,
-    PasswordEncodeFailed,
+    UserNameNotValid(String),
+    EmailNotValid(String),
+    PasswordEncodeFailed(argon2::Error),
     WrongCredentials,
-    EmailNotValid,
-    MissingBodyFields,
-    DBQueryError,
+    MissingBodyFields(HashMap<String, String>),
+    DBQueryError(sqlx::Error),
 }
 
 impl reject::Reject for Errors {}
@@ -36,10 +37,12 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     } else if let Some(e) = err.find::<Errors>() {
         match e {
             Errors::PasswordNotValid => {
+                tracing::error!("Password not meets security requirements.");
                 code = StatusCode::BAD_REQUEST;
                 message = "Password not valid.";
             }
-            Errors::PasswordEncodeFailed => {
+            Errors::PasswordEncodeFailed(e) => {
+                tracing::error!("Failed to verify password: {:?}", e);
                 code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Failed to encode/decode password.";
             }
@@ -47,19 +50,23 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 code = StatusCode::UNAUTHORIZED;
                 message = "Wrong username or password.";
             }
-            Errors::UserNameNotValid => {
+            Errors::UserNameNotValid(s) => {
+                tracing::error!("{} is not a valid user name.", s);
                 code = StatusCode::BAD_REQUEST;
                 message = "Username not valid.";
             }
-            Errors::EmailNotValid => {
+            Errors::EmailNotValid(s) => {
+                tracing::error!("{} is not a valid user email.", s);
                 code = StatusCode::BAD_REQUEST;
                 message = "Email not valid.";
             }
-            Errors::MissingBodyFields => {
+            Errors::MissingBodyFields(body) => {
+                tracing::error!("Some fields are missing in request body: {:?}", body);
                 code = StatusCode::BAD_REQUEST;
                 message = "Invalid Body";
             }
-            Errors::DBQueryError => {
+            Errors::DBQueryError(e) => {
+                tracing::error!("Failed to execute query: {:?}", e);
                 code = StatusCode::BAD_REQUEST;
                 message = "Internal Server Error";
             }

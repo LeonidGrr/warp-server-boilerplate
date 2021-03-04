@@ -41,14 +41,10 @@ pub async fn register_handler(
         )
         .execute(&db_pool)
         .await
-        .map_err(|e| {
-            tracing::error!("Failed to execute query: {:?}", e);
-            return reject::custom(Errors::DBQueryError);
-        })?;
+        .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
         return Ok(StatusCode::OK);
     } else {
-        tracing::error!("Some fields are missing in request body: {:?}", body);
-        return Err(reject::custom(Errors::MissingBodyFields));
+        return Err(reject::custom(Errors::MissingBodyFields(body)));
     }
     // let result = sqlx::query!("SELECT * FROM blank")
     //     .fetch_one(&db_pool)

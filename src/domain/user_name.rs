@@ -13,8 +13,7 @@ impl UserName {
         let contains_forbidden_characters = s.chars().any(|g| forbidden_characters.contains(&g));
 
         if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
-            tracing::error!("{} is not a valid user name.", s);
-            return Err(reject::custom(Errors::UserNameNotValid));
+            return Err(reject::custom(Errors::UserNameNotValid(s.to_string())));
         } else {
             Ok(Self(s.to_string()))
         }

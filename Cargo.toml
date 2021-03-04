@@ -19,7 +19,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde-aux = "1.0.1"
 config = { version = "0.10.1", default-features = false, features = ["yaml"] }
 sqlx = { version = "0.5.1", default-features = false, features = ["runtime-tokio-native-tls", "macros", "postgres", "uuid", "chrono", "json"] }
-uuid = { version = "0.8.1", features = ["v4"] }
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
 chrono = "0.4.15"
 tracing = "0.1"
 tracing-subscriber = "0.2.0"

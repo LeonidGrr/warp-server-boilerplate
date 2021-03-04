@@ -1,3 +1,4 @@
+use crate::errors::Errors;
 use crate::routes::with_db;
 use sqlx::PgPool;
 use warp::{http::StatusCode, reject, Filter, Rejection, Reply};
@@ -15,10 +16,7 @@ pub async fn health_check_handler(db_pool: PgPool) -> Result<impl Reply, Rejecti
     let result = sqlx::query!("SELECT * FROM blank")
         .fetch_one(&db_pool)
         .await
-        .map_err(|e| {
-            tracing::error!("Failed to execute query: {:?}", e);
-            reject()
-        })?;
+        .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
     tracing::info!("{:?}", result);
 
     Ok(StatusCode::OK)

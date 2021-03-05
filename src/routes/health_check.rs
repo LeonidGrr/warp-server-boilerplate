@@ -16,7 +16,7 @@ pub async fn health_check_handler(db_pool: PgPool) -> Result<impl Reply, Rejecti
     let result = sqlx::query!("SELECT * FROM blank")
         .fetch_one(&db_pool)
         .await
-        .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
+        .map_err(|_| reject::custom(Errors::DBQueryError))?;
     tracing::info!("{:?}", result);
 
     Ok(StatusCode::OK)

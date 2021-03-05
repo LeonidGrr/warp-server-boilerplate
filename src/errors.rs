@@ -12,7 +12,7 @@ pub enum Errors {
     PasswordEncodeFailed(argon2::Error),
     WrongCredentials,
     MissingBodyFields(HashMap<String, String>),
-    DBQueryError(sqlx::Error),
+    DBQueryError,
 }
 
 impl reject::Reject for Errors {}
@@ -23,7 +23,7 @@ struct ErrorMessage {
     message: String,
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, unreachable_patterns)]
 async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let code;
     let message;
@@ -65,8 +65,8 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 code = StatusCode::BAD_REQUEST;
                 message = "Invalid Body";
             }
-            Errors::DBQueryError(e) => {
-                tracing::error!("Failed to execute query: {:?}", e);
+            Errors::DBQueryError => {
+                tracing::error!("Failed to execute query.");
                 code = StatusCode::BAD_REQUEST;
                 message = "Internal Server Error";
             }

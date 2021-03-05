@@ -41,7 +41,7 @@ pub async fn register_handler(
         )
         .execute(&db_pool)
         .await
-        .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
+        .map_err(|_| reject::custom(Errors::DBQueryError))?;
         return Ok(StatusCode::OK);
     } else {
         return Err(reject::custom(Errors::MissingBodyFields(body)));

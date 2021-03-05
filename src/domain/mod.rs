@@ -4,7 +4,7 @@ mod user_email;
 mod user_name;
 mod user_password;
 
-pub use session::Session;
+pub use session::{Session, SessionPool};
 pub use user::User;
 pub use user_email::UserEmail;
 pub use user_name::UserName;

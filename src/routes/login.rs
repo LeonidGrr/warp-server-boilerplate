@@ -1,16 +1,22 @@
-use crate::domain::{Session, UserPassword};
+use crate::domain::{SessionPool, UserPassword};
 use crate::errors::Errors;
-use crate::routes::with_db;
+use crate::routes::{with_db, with_session};
 use sqlx::PgPool;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use warp::{http::header, http::Response, http::StatusCode, reject, Filter, Rejection, Reply};
 
-pub fn login(db_pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
+pub fn login(
+    db_pool: PgPool,
+    session_pool: Arc<Mutex<SessionPool>>,
+) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("login")
         .and(warp::post())
         .and(warp::body::content_length_limit(1024 * 32))
         .and(warp::body::form())
         .and(with_db(db_pool))
+        .and(with_session(session_pool))
         .and_then(login_handler)
 }
 
@@ -18,6 +24,7 @@ pub fn login(db_pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejec
 pub async fn login_handler(
     body: HashMap<String, String>,
     db_pool: PgPool,
+    session_pool: Arc<Mutex<SessionPool>>,
 ) -> Result<impl Reply, Rejection> {
     tracing::info!("Verifying user credentials: {:?}", body);
     let name = body.get(&("name".to_string()));
@@ -28,15 +35,14 @@ pub async fn login_handler(
             .map(|row| UserPassword(row.hash))
             .fetch_one(&db_pool)
             .await
-            .map_err(|e| reject::custom(Errors::DBQueryError(e)))?;
+            .map_err(|_| reject::custom(Errors::DBQueryError))?;
 
         if !UserPassword::verify(&password_hash.0, password)? {
             return Err(reject::custom(Errors::WrongCredentials));
         }
 
-        let session = Session::new(name);
+        let session = session_pool.lock().await.register_session(name);
         let cookie_header = session.get_cookie_header();
-        tracing::info!("Registering new session.: {:?}", session);
 
         Ok(Response::builder()
             .status(StatusCode::OK)

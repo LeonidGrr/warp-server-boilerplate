@@ -8,8 +8,6 @@ use warp::{http::StatusCode, reject, Filter, Rejection, Reply};
 
 pub fn register(db_pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("register")
-        .and(warp::post())
-        .and(warp::body::content_length_limit(1024 * 32))
         .and(warp::body::form())
         .and(with_db(db_pool))
         .and_then(register_handler)
@@ -20,7 +18,7 @@ pub async fn register_handler(
     body: HashMap<String, String>,
     db_pool: PgPool,
 ) -> Result<impl Reply, Rejection> {
-    tracing::info!("Creating new user from data {:?}", body);
+    tracing::info!("Creating new user from data {:#?}", body);
     let name = body.get(&("name".to_string()));
     let email = body.get(&("email".to_string()));
     let password = body.get(&("password".to_string()));
@@ -46,11 +44,4 @@ pub async fn register_handler(
     } else {
         return Err(reject::custom(Errors::MissingBodyFields(body)));
     }
-    // let result = sqlx::query!("SELECT * FROM blank")
-    //     .fetch_one(&db_pool)
-    //     .await
-    //     .map_err(|e| {
-    //         tracing::error!("Failed to execute query: {:?}", e);
-    //         reject()
-    //     })?;
 }

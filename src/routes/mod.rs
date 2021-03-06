@@ -1,10 +1,12 @@
 mod health_check;
 mod login;
+mod logout;
 mod register;
 
 use crate::domain::SessionPool;
 use health_check::*;
 use login::*;
+use logout::*;
 use register::*;
 use sqlx::PgPool;
 use std::convert::Infallible;
@@ -16,9 +18,12 @@ pub fn routes(
     db_pool: PgPool,
     session_pool: Arc<Mutex<SessionPool>>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
-    health_check(db_pool.clone())
-        .or(register(db_pool.clone()))
-        .or(login(db_pool, Arc::clone(&session_pool)))
+    warp::post().and(
+        health_check(db_pool.clone())
+            .or(register(db_pool.clone()))
+            .or(login(db_pool, Arc::clone(&session_pool)))
+            .or(logout(Arc::clone(&session_pool))),
+    )
 }
 
 pub fn with_db(db_pool: PgPool) -> impl Filter<Extract = (PgPool,), Error = Infallible> + Clone {

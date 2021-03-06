@@ -7,6 +7,7 @@ use warp::{reject, Rejection, Reply};
 #[derive(Debug)]
 pub enum Errors {
     PasswordNotValid,
+    SerializationError,
     UserNameNotValid(String),
     EmailNotValid(String),
     PasswordEncodeFailed(argon2::Error),
@@ -42,7 +43,7 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "Password not valid.";
             }
             Errors::PasswordEncodeFailed(e) => {
-                tracing::error!("Failed to verify password: {:?}", e);
+                tracing::error!("Failed to verify password: {:#?}", e);
                 code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Failed to encode/decode password.";
             }
@@ -61,12 +62,17 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "Email not valid.";
             }
             Errors::MissingBodyFields(body) => {
-                tracing::error!("Some fields are missing in request body: {:?}", body);
+                tracing::error!("Some fields are missing in request body: {:#?}", body);
                 code = StatusCode::BAD_REQUEST;
                 message = "Invalid Body";
             }
             Errors::DBQueryError => {
                 tracing::error!("Failed to execute query.");
+                code = StatusCode::BAD_REQUEST;
+                message = "Internal Server Error";
+            }
+            Errors::SerializationError => {
+                tracing::error!("Serialization error.");
                 code = StatusCode::BAD_REQUEST;
                 message = "Internal Server Error";
             }

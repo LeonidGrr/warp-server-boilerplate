@@ -30,7 +30,8 @@ async fn main() {
         .allow_any_origin();
     let routes = routes(db_connections_pool, session_pool)
         .with(cors)
-        .with(warp::trace::request());
+        .with(warp::trace::request())
+        .and(warp::body::content_length_limit(1024 * 32));
 
     warp::serve(routes).run(address).await;
 }

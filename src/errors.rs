@@ -22,7 +22,6 @@ impl reject::Reject for Errors {}
 async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let code;
     let message;
-    let mut uri = "/";
 
     if err.is_not_found() {
         code = StatusCode::NOT_FOUND;
@@ -43,9 +42,10 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "Failed to encode/decode password.";
             }
             Errors::InvalidSession => {
-                code = StatusCode::MOVED_PERMANENTLY;
-                message = "Invalid session.";
-                uri = "/login";
+                return Ok(Response::builder()
+                    .status(StatusCode::MOVED_PERMANENTLY.as_u16())
+                    .header(header::LOCATION, "/login")
+                    .body("Invalid session."));
             }
             Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;
@@ -91,6 +91,5 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
 
     Ok(Response::builder()
         .status(code.as_u16())
-        .header(header::LOCATION, uri)
         .body(message))
 }

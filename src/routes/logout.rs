@@ -1,15 +1,15 @@
 use crate::domain::SessionPool;
-use crate::routes::with_session;
+use crate::routes::with_session_pool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use warp::http::StatusCode;
-use warp::{Filter, Rejection, Reply};
+use warp::http::Uri;
+use warp::{Filter, Rejection, Reply, redirect};
 
 pub fn logout(
     session_pool: Arc<Mutex<SessionPool>>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("logout")
-        .and(with_session(session_pool))
+        .and(with_session_pool(session_pool))
         .and_then(logout_handler)
 }
 
@@ -19,7 +19,7 @@ pub async fn logout_handler(
     session_id: Option<String>,
 ) -> Result<impl Reply, Rejection> {
     if let Some(session_id) = session_id {
-        session_pool.lock().await.stop_session(&session_id)?;
+        session_pool.lock().await.stop_session(&session_id);
     }
-    Ok(StatusCode::OK)
+    Ok(redirect::redirect(Uri::from_static("/login")))
 }

@@ -1,6 +1,6 @@
 use crate::domain::{SessionPool, UserPassword};
 use crate::errors::Errors;
-use crate::routes::{with_db, with_session};
+use crate::routes::{with_db, with_session_pool};
 use sqlx::PgPool;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -15,7 +15,7 @@ pub fn login(
         .and(warp::post())
         .and(warp::body::form())
         .and(with_db(db_pool))
-        .and(with_session(session_pool))
+        .and(with_session_pool(session_pool))
         .and_then(login_handler)
 }
 

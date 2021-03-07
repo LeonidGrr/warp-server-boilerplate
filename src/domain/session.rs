@@ -30,12 +30,16 @@ impl SessionPool {
         )
     }
 
-    pub fn stop_session(&mut self, session_id: &String) -> Result<Session, Rejection> {
-        if let Some(session) = self.0.remove(session_id) {
-            tracing::info!("Session {:#?}, successfully stopped.", session);
-            return Ok(session);
+    pub fn stop_session(&mut self, session_id: &String) {
+       self.0.remove(session_id);
+    }
+
+    pub fn validate_session(&mut self, session_id: &String) -> bool {
+        if let Some(session) = self.0.get_mut(session_id) {
+            let expire_at = session.1;
+            return Utc::now() < expire_at;
         }
-        Err(reject::custom(Errors::InvalidSession))
+        false
     }
 
     pub fn get_session(&mut self, session_id: &String) -> Result<Session, Rejection> {
@@ -46,19 +50,10 @@ impl SessionPool {
         Err(reject::custom(Errors::InvalidSession))
     }
 
-    pub fn validate_session(&mut self, session_id: &String) -> Result<bool, Rejection> {
-        if let Some(session) = self.0.get_mut(session_id) {
-            let expire_at = session.1;
-            let is_valid = Utc::now() < expire_at;
-            return Ok(is_valid);
-        }
-        Err(reject::custom(Errors::InvalidSession))
-    }
-
     pub fn update_session(&mut self, session_id: &String) -> Result<String, Rejection> {
         if let Some(session) = self.0.get_mut(session_id) {
             session.1 = Utc::now() + Duration::days(1);
-            tracing::info!("Session successfully updated: {:?}", session);
+            tracing::info!("Session successfully updated: {:#?}", session);
             return Ok(format!(
                 "session={}; Max-Age=86400; Expires={}; SameSite=Strict; HttpOpnly; Secure=true",
                 session.0, session.1

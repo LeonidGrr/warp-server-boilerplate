@@ -8,6 +8,7 @@ use warp::{http::StatusCode, reject, Filter, Rejection, Reply};
 
 pub fn register(db_pool: PgPool) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("register")
+        .and(warp::post())
         .and(warp::body::form())
         .and(with_db(db_pool))
         .and_then(register_handler)

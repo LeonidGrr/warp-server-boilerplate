@@ -12,6 +12,7 @@ pub fn login(
     session_pool: Arc<Mutex<SessionPool>>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("login")
+        .and(warp::post())
         .and(warp::body::form())
         .and(with_db(db_pool))
         .and(with_session(session_pool))
@@ -23,6 +24,7 @@ pub async fn login_handler(
     body: HashMap<String, String>,
     db_pool: PgPool,
     session_pool: Arc<Mutex<SessionPool>>,
+    session_id: Option<String>,
 ) -> Result<impl Reply, Rejection> {
     tracing::info!("Verifying user credentials: {:#?}", body);
     let name = body.get(&("name".to_string()));
@@ -39,14 +41,13 @@ pub async fn login_handler(
             return Err(reject::custom(Errors::WrongCredentials));
         }
 
-        let session = session_pool.lock().await.register_session(name);
+        let session_cookie = session_pool.lock().await.register_session();
 
-        Ok(Response::builder()
+        return Ok(Response::builder()
             .status(StatusCode::OK)
             .header(header::LOCATION, "/")
-            .header(header::SET_COOKIE, session)
-            .body("Success!"))
-    } else {
-        return Err(reject::custom(Errors::MissingBodyFields(body)));
+            .header(header::SET_COOKIE, session_cookie)
+            .body("Success!"));
     }
+    Err(reject::custom(Errors::MissingBodyFields(body)))
 }

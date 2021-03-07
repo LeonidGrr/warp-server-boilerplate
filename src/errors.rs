@@ -1,7 +1,6 @@
-use serde::Serialize;
 use std::collections::HashMap;
 use std::convert::Infallible;
-use warp::http::StatusCode;
+use warp::http::{header, Response, StatusCode};
 use warp::{reject, Rejection, Reply};
 
 #[derive(Debug)]
@@ -14,20 +13,16 @@ pub enum Errors {
     WrongCredentials,
     MissingBodyFields(HashMap<String, String>),
     DBQueryError,
+    InvalidSession,
 }
 
 impl reject::Reject for Errors {}
-
-#[derive(Serialize)]
-struct ErrorMessage {
-    code: u16,
-    message: String,
-}
 
 #[allow(dead_code, unreachable_patterns)]
 async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     let code;
     let message;
+    let mut uri = "/";
 
     if err.is_not_found() {
         code = StatusCode::NOT_FOUND;
@@ -46,6 +41,11 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 tracing::error!("Failed to verify password: {:#?}", e);
                 code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Failed to encode/decode password.";
+            }
+            Errors::InvalidSession => {
+                code = StatusCode::MOVED_PERMANENTLY;
+                message = "Invalid session.";
+                uri = "/login";
             }
             Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;
@@ -89,10 +89,8 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
         message = "Internal Server Error";
     }
 
-    let json = warp::reply::json(&ErrorMessage {
-        code: code.as_u16(),
-        message: message.into(),
-    });
-
-    Ok(warp::reply::with_status(json, code))
+    Ok(Response::builder()
+        .status(code.as_u16())
+        .header(header::LOCATION, uri)
+        .body(message))
 }

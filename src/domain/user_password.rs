@@ -1,6 +1,5 @@
 use crate::errors::Errors;
 use argon2::{self, Config};
-use lazy_static;
 use rand::Rng;
 use unicode_segmentation::UnicodeSegmentation;
 use warp::{reject, Rejection};
@@ -13,7 +12,7 @@ lazy_static::lazy_static! {
 pub struct UserPassword(pub String);
 
 impl UserPassword {
-    pub fn parse(password: &String) -> Result<UserPassword, Rejection> {
+    pub fn parse(password: &str) -> Result<UserPassword, Rejection> {
         let is_empty_or_whitespace = password.trim().is_empty();
         let is_too_short = password.graphemes(true).count() < 8;
         let is_too_long = password.graphemes(true).count() > 256;
@@ -25,7 +24,7 @@ impl UserPassword {
         Ok(Self(hash))
     }
 
-    fn hash_password(password: &String) -> Result<String, Rejection> {
+    fn hash_password(password: &str) -> Result<String, Rejection> {
         let salt = rand::thread_rng().gen::<[u8; 32]>();
         let config = Config {
             secret: SECRET_KEY.as_bytes(),

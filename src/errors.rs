@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
-use warp::http::{header, Response, StatusCode};
-use warp::{reject, Rejection, Reply};
+use warp::http::{Response, StatusCode, Uri};
+use warp::{redirect, reject, Rejection, Reply};
 
 #[derive(Debug)]
 pub enum Errors {
@@ -26,7 +26,10 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     if err.is_not_found() {
         code = StatusCode::NOT_FOUND;
         message = "Not Found";
-    } else if let Some(_) = err.find::<warp::filters::body::BodyDeserializeError>() {
+    } else if err
+        .find::<warp::filters::body::BodyDeserializeError>()
+        .is_some()
+    {
         code = StatusCode::BAD_REQUEST;
         message = "Invalid Body";
     } else if let Some(e) = err.find::<Errors>() {
@@ -42,10 +45,11 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "Failed to encode/decode password.";
             }
             Errors::InvalidSession => {
-                return Ok(Response::builder()
-                    .status(StatusCode::MOVED_PERMANENTLY.as_u16())
-                    .header(header::LOCATION, "/login")
-                    .body("Invalid session."));
+                return Ok(redirect::redirect(Uri::from_static("/login")).into_response());
+                // return Ok(Response::builder()
+                //     .status(StatusCode::MOVED_PERMANENTLY.as_u16())
+                //     .header(header::LOCATION, "/login")
+                //     .body("Invalid session."));
             }
             Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;
@@ -81,7 +85,7 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "UNHANDLED_REJECTION";
             }
         }
-    } else if let Some(_) = err.find::<warp::reject::MethodNotAllowed>() {
+    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         code = StatusCode::METHOD_NOT_ALLOWED;
         message = "Method Not Allowed";
     } else {
@@ -91,5 +95,6 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
 
     Ok(Response::builder()
         .status(code.as_u16())
-        .body(message))
+        .body(message)
+        .into_response())
 }

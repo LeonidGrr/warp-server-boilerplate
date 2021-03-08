@@ -3,7 +3,7 @@ use crate::routes::with_session_pool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::http::Uri;
-use warp::{Filter, Rejection, Reply, redirect};
+use warp::{redirect, Filter, Rejection, Reply};
 
 pub fn logout(
     session_pool: Arc<Mutex<SessionPool>>,

@@ -32,6 +32,6 @@ async fn main() {
         .with(cors)
         .with(warp::trace::request())
         .and(warp::body::content_length_limit(1024 * 32));
-    
+
     warp::serve(routes).run(address).await;
 }

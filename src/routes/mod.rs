@@ -1,32 +1,25 @@
+mod api;
+mod auth;
 mod health_check;
-mod login;
-mod logout;
-mod register;
-mod update_session;
 
-use crate::domain::{SessionPool, Session};
+use crate::domain::{Session, SessionPool};
+use crate::errors::Errors;
+use api::*;
+use auth::*;
 use health_check::*;
-use login::*;
-use logout::*;
-use register::*;
-use update_session::*;
 use sqlx::PgPool;
 use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::errors::Errors;
-use warp::http::Uri;
-use warp::{filters, Filter, Rejection, Reply, reject, redirect};
+use warp::{filters, reject, Filter, Rejection, Reply};
 
 pub fn routes(
     db_pool: PgPool,
     session_pool: Arc<Mutex<SessionPool>>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     health_check(db_pool.clone())
-        .or(register(db_pool.clone()))
-        .or(login(db_pool, Arc::clone(&session_pool)))
-        .or(logout(Arc::clone(&session_pool)))
-        .or(update_session(Arc::clone(&session_pool)))
+        .or(auth(db_pool.clone(), Arc::clone(&session_pool)))
+        .or(api(db_pool, Arc::clone(&session_pool)))
 }
 
 pub fn with_db(db_pool: PgPool) -> impl Filter<Extract = (PgPool,), Error = Infallible> + Clone {
@@ -41,9 +34,7 @@ pub fn with_session_pool(
         .and(filters::cookie::optional("session"))
 }
 
-pub fn with_session(
-    session_pool: Arc<Mutex<SessionPool>>,
-) -> filters::BoxedFilter<(Session,)> {
+pub fn with_session(session_pool: Arc<Mutex<SessionPool>>) -> filters::BoxedFilter<(Session,)> {
     warp::any()
         .and(filters::cookie::optional("session"))
         .and_then(move |session_id: Option<String>| {
@@ -55,7 +46,7 @@ pub fn with_session(
                         return session_pool.lock().await.get_session(&session_id);
                     }
                 }
-                Err(redirect::redirect(Uri::from_static("/login")).into_response())
+                Err(reject::custom(Errors::InvalidSession))
             }
         })
         .boxed()

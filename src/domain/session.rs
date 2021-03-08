@@ -22,7 +22,7 @@ impl SessionPool {
         let session_id = Uuid::new_v4().to_simple().to_string();
         let expire_at: DateTime<Utc> = Utc::now() + Duration::days(1);
         let session = Session(session_id.clone(), expire_at);
-        self.0.insert(session_id.clone(), session.clone());
+        self.0.insert(session_id, session.clone());
         tracing::info!("New session successfully registered: {:?}", session);
         format!(
             "session={}; Max-Age=86400; Expires={}; SameSite=Strict; HttpOpnly; Secure=true",
@@ -30,11 +30,11 @@ impl SessionPool {
         )
     }
 
-    pub fn stop_session(&mut self, session_id: &String) {
-       self.0.remove(session_id);
+    pub fn stop_session(&mut self, session_id: &str) {
+        self.0.remove(session_id);
     }
 
-    pub fn validate_session(&mut self, session_id: &String) -> bool {
+    pub fn validate_session(&mut self, session_id: &str) -> bool {
         if let Some(session) = self.0.get_mut(session_id) {
             let expire_at = session.1;
             return Utc::now() < expire_at;
@@ -42,7 +42,7 @@ impl SessionPool {
         false
     }
 
-    pub fn get_session(&mut self, session_id: &String) -> Result<Session, Rejection> {
+    pub fn get_session(&mut self, session_id: &str) -> Result<Session, Rejection> {
         if let Some(session) = self.0.get_mut(session_id) {
             tracing::info!("Session {:#?} retrieved.", session);
             return Ok(session.clone());
@@ -50,7 +50,7 @@ impl SessionPool {
         Err(reject::custom(Errors::InvalidSession))
     }
 
-    pub fn update_session(&mut self, session_id: &String) -> Result<String, Rejection> {
+    pub fn update_session(&mut self, session_id: &str) -> Result<String, Rejection> {
         if let Some(session) = self.0.get_mut(session_id) {
             session.1 = Utc::now() + Duration::days(1);
             tracing::info!("Session successfully updated: {:#?}", session);

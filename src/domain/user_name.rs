@@ -6,7 +6,7 @@ use warp::{reject, Rejection};
 pub struct UserName(String);
 
 impl UserName {
-    pub fn parse(s: &String) -> Result<UserName, Rejection> {
+    pub fn parse(s: &str) -> Result<UserName, Rejection> {
         let is_empty_or_whitespace = s.trim().is_empty();
         let is_too_long = s.graphemes(true).count() > 256;
         let forbidden_characters = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
@@ -14,9 +14,8 @@ impl UserName {
 
         if is_empty_or_whitespace || is_too_long || contains_forbidden_characters {
             return Err(reject::custom(Errors::UserNameNotValid(s.to_string())));
-        } else {
-            Ok(Self(s.to_string()))
         }
+        Ok(Self(s.to_string()))
     }
 
     pub fn inner(self) -> String {

@@ -6,12 +6,11 @@ use warp::{reject, Rejection};
 pub struct UserEmail(String);
 
 impl UserEmail {
-    pub fn parse(s: &String) -> Result<UserEmail, Rejection> {
+    pub fn parse(s: &str) -> Result<UserEmail, Rejection> {
         if validate_email(s) {
-            Ok(Self(s.to_string()))
-        } else {
-            return Err(reject::custom(Errors::EmailNotValid(s.to_string())));
+            return Ok(Self(s.to_string()));
         }
+        Err(reject::custom(Errors::EmailNotValid(s.to_string())))
     }
 }
 

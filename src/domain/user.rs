@@ -11,7 +11,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(name: &String, email: &String, password: &String) -> Result<Self, Rejection> {
+    pub fn new(name: &str, email: &str, password: &str) -> Result<Self, Rejection> {
         let created_at = Utc::now();
         let email = UserEmail::parse(email)?;
         let name = UserName::parse(name)?;

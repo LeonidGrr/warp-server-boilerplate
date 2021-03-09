@@ -1,5 +1,5 @@
 use crate::domain::{Session, SessionPool};
-use crate::routes::with_session;
+use crate::filters::with_session;
 use sqlx::PgPool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -7,7 +7,7 @@ use warp::http::StatusCode;
 use warp::{Filter, Rejection, Reply};
 
 pub fn api(
-    db_pool: PgPool,
+    _db_pool: PgPool,
     session_pool: Arc<Mutex<SessionPool>>,
 ) -> impl Filter<Extract = impl Reply, Error = Rejection> + Clone {
     warp::path("api")

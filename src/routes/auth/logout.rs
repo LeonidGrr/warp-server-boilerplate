@@ -1,5 +1,5 @@
 use crate::domain::SessionPool;
-use crate::routes::with_session_pool;
+use crate::filters::with_session_pool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::http::Uri;

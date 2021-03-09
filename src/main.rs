@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use warp::http::{header, Method};
 use warp::Filter;
 use warp_server_boilerplate::configuration::get_configuration;
-use warp_server_boilerplate::domain::SessionPool;
+use warp_server_boilerplate::domain::{SessionPool, LoginThrottling};
 use warp_server_boilerplate::routes::*;
 use warp_server_boilerplate::telemetry::{get_subscriber, init_subscriber};
 
@@ -24,11 +24,12 @@ async fn main() {
     .parse()
     .expect("Unable to parse socket address");
     let session_pool = SessionPool::init();
+    let login_throttling = LoginThrottling::init();
     let cors = warp::cors()
         .allow_methods(&[Method::GET, Method::POST])
         .allow_headers(&[header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_any_origin();
-    let routes = routes(db_connections_pool, session_pool)
+    let routes = routes(db_connections_pool, session_pool, login_throttling)
         .with(cors)
         .with(warp::trace::request())
         .and(warp::body::content_length_limit(1024 * 32));

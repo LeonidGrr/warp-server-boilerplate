@@ -1,6 +1,6 @@
 use crate::domain::User;
 use crate::errors::Errors;
-use crate::routes::with_db;
+use crate::filters::with_db;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use uuid::Uuid;

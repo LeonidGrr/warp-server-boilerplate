@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
-use warp::http::{Response, StatusCode, Uri};
-use warp::{redirect, reject, Rejection, Reply};
+use warp::http::{Response, StatusCode};
+use warp::{reject, Rejection, Reply};
 
 #[derive(Debug)]
 pub enum Errors {
@@ -14,6 +14,7 @@ pub enum Errors {
     MissingBodyFields(HashMap<String, String>),
     DBQueryError,
     InvalidSession,
+    LoginAttemptsLimit,
 }
 
 impl reject::Reject for Errors {}
@@ -45,15 +46,16 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
                 message = "Failed to encode/decode password.";
             }
             Errors::InvalidSession => {
-                return Ok(redirect::redirect(Uri::from_static("/login")).into_response());
-                // return Ok(Response::builder()
-                //     .status(StatusCode::MOVED_PERMANENTLY.as_u16())
-                //     .header(header::LOCATION, "/login")
-                //     .body("Invalid session."));
+                code = StatusCode::UNAUTHORIZED;
+                message = "Invalid session.";
             }
             Errors::WrongCredentials => {
                 code = StatusCode::UNAUTHORIZED;
                 message = "Wrong username or password.";
+            }
+            Errors::LoginAttemptsLimit => {
+                code = StatusCode::UNAUTHORIZED;
+                message = "Failed login attempt limit reached. Wait a minute and try again.";
             }
             Errors::UserNameNotValid(s) => {
                 tracing::error!("{} is not a valid user name.", s);

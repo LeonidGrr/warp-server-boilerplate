@@ -37,13 +37,8 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
         match e {
             Errors::PasswordNotValid => {
                 tracing::error!("Password not meets security requirements.");
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::UNAUTHORIZED;
                 message = "Password not valid.";
-            }
-            Errors::PasswordEncodeFailed(e) => {
-                tracing::error!("Failed to verify password: {:#?}", e);
-                code = StatusCode::INTERNAL_SERVER_ERROR;
-                message = "Failed to encode/decode password.";
             }
             Errors::InvalidSession => {
                 code = StatusCode::UNAUTHORIZED;
@@ -59,27 +54,32 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
             }
             Errors::UserNameNotValid(s) => {
                 tracing::error!("{} is not a valid user name.", s);
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::UNAUTHORIZED;
                 message = "Username not valid.";
             }
             Errors::EmailNotValid(s) => {
                 tracing::error!("{} is not a valid user email.", s);
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::UNAUTHORIZED;
                 message = "Email not valid.";
+            }
+            Errors::PasswordEncodeFailed(e) => {
+                tracing::error!("Failed to verify password: {:#?}", e);
+                code = StatusCode::INTERNAL_SERVER_ERROR;
+                message = "Failed to encode/decode password.";
             }
             Errors::MissingBodyFields(body) => {
                 tracing::error!("Some fields are missing in request body: {:#?}", body);
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Invalid Body";
             }
             Errors::DBQueryError => {
                 tracing::error!("Failed to execute query.");
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Internal Server Error";
             }
             Errors::SerializationError => {
                 tracing::error!("Serialization error.");
-                code = StatusCode::BAD_REQUEST;
+                code = StatusCode::INTERNAL_SERVER_ERROR;
                 message = "Internal Server Error";
             }
             _ => {

@@ -2,7 +2,7 @@ use crate::domain::{SessionPool, UserPassword, LoginThrottling};
 use crate::errors::Errors;
 use crate::filters::{with_db, with_session_pool, with_login_throttling};
 use sqlx::PgPool;
-use std::collections::HashMap;
+use std::{collections::HashMap, net::SocketAddr};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use warp::{http::header, http::Response, http::StatusCode, reject, Filter, Rejection, Reply};
@@ -15,20 +15,26 @@ pub fn login(
     warp::path("login")
         .and(warp::post())
         .and(warp::body::form())
+        .and(warp::addr::remote())
         .and(with_db(db_pool))
         .and(with_session_pool(session_pool))
         .and(with_login_throttling(login_throttling))
         .and_then(login_handler)
 }
 
-#[tracing::instrument(name = "Log-in existing user", skip(body, _session_id, db_pool, session_pool, login_throttling))]
+#[tracing::instrument(name = "Log-in existing user", skip(body, addr, _session_id, db_pool, session_pool, login_throttling))]
 pub async fn login_handler(
     body: HashMap<String, String>,
+    addr: Option<SocketAddr>,
     db_pool: PgPool,
     session_pool: Arc<Mutex<SessionPool>>,
     _session_id: Option<String>,
     login_throttling: Arc<Mutex<LoginThrottling>>,
 ) -> Result<impl Reply, Rejection> {
+    if let Some(addr) = addr {
+        tracing::info!("Login attempt from {:?}.", addr);
+    }
+
     tracing::info!("Verifying user credentials: {:#?}", body);
     let name = body.get(&("name".to_string()));
     let password = body.get(&("password".to_string()));
